@@ -20,3 +20,10 @@ micromamba install pytorch torchvision torchaudio pytorch-cuda=11.7 -c pytorch -
 micromamba install numpy pillow   
 pip install ultralytics      
 ```
+
+## Measurements
+
+Camera heights:
+
+1. 0.545 m (up until 3 pm)
+2. 0.67 m
