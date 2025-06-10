@@ -27,3 +27,6 @@ Camera heights:
 
 1. 0.545 m (up until 3 pm)
 2. 0.67 m
+
+Camera specs:
+6.34 Brennweite (10 mm)

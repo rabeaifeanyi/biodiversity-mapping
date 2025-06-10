@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
 # TODO maybe provide full path
-folder_path = "ipad_img_pred/img1"  
+folder_path = "/home/rabea/Documents/MWRS/biodiversity-mapping/test_img/test_img"  
 
 image_extensions = ["*.jpg", "*.jpeg", "*.png", "*.gif", "*.JPG", "*.JPEG"]
 image_paths = []
@@ -23,6 +23,8 @@ else:
 
     fig, axes = plt.subplots(rows, cols, figsize=(cols * 5, rows * 4))
     axes = axes.flatten()
+    
+
 
     for ax, img_path in zip(axes, image_paths):
 
@@ -36,6 +38,9 @@ else:
         if os.path.exists(xml_path):
             tree = ET.parse(xml_path)
             root = tree.getroot()
+            objects = root.findall("object")
+            print(f"{len(objects)} Objekte in {xml_path}")
+
 
             for obj in root.findall("object"):
                 cls = obj.find("name").text
@@ -66,5 +71,5 @@ else:
         axes[idx].axis("off")
 
     plt.tight_layout()
-    plt.savefig("ipad_img_test_plot.png")
+    plt.savefig("test_im.png")
     plt.show()

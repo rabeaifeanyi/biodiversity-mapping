@@ -1,0 +1,27 @@
+{
+    "header": {
+        "stamp": {
+            "sec": 1748611870,
+            "nanosec": 329239954
+        },
+        "frame_id": "camera"
+    },
+    "encoding": "yuv422_yuy2",
+    "height": 1944,
+    "width": 2592,
+    "step": 5184,
+    "format": null,
+    "transform": {
+        "translation": {
+            "x": 361142.04568411264,
+            "y": 5815057.649806121,
+            "z": 0.5
+        },
+        "rotation": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -0.535243691835683,
+            "w": 0.8446976916921866
+        }
+    }
+}
