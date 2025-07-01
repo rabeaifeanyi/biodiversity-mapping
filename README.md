@@ -30,3 +30,12 @@ Camera heights:
 
 Camera specs:
 6.34 Brennweite (10 mm)
+
+## How to run the pipeline
+
+```bash
+ % python pipeline.py \
+  --model_path [...Indicators_Mapping/train/weights/best.pt] \
+  --image_dir [path to your data] \
+  --output_dir [path to your data/results]
+```
