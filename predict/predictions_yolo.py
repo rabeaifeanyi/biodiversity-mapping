@@ -52,6 +52,7 @@ def model_predictions(saved_model, img_dir):
     #     # convert the frame to a CHW torch tensor for training
     #     transforms.ToTensor(),
     # ])
+    
 
     with torch.no_grad():
         while True:
