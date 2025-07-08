@@ -35,7 +35,6 @@ from biodiversity import (
     CameraConfig
 )
 
-
 def run_pipeline(model_path, image_dir, output_dir):
     """
     Runs the full detection and mapping pipeline.

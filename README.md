@@ -1,6 +1,6 @@
 # Biodiversity Mapping Pipeline
 
-This repository provides a pipeline for detecting plants in field images, mapping their pixel positions to real-world coordinates, and generating spatial visualizations (e.g., heatmaps). The core script is `pipeline.py`, supported by several helper modules. Teh pipeline can be used for either robot or drone imagery.
+This repository provides a pipeline for detecting plants in field images, mapping their pixel positions to real-world coordinates, and generating spatial visualizations (e.g., heatmaps). The core script is `pipeline.py`, supported by several helper modules. The pipeline can be used for either robot or drone imagery.
 
 ## Prerequisites
 
