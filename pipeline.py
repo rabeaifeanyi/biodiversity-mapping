@@ -85,7 +85,7 @@ def run_pipeline(model_path, image_dir):
                 distribution[c] += 1
             stats["detections_per_image_distribution"] = distribution
 
-        fig = plot_map(global_pos, background_path=None)
+        fig = plot_map(global_pos)
         return fig, logs, stats
 
     # No cache? Run YOLO
