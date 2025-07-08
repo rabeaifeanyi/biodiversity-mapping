@@ -17,7 +17,6 @@ st.title("🌿 Biodiversity Mapping Pipeline")
 
 model_path = st.text_input("YOLO Model Path", "/path/to/best.pt")
 image_dir = st.text_input("Input Images Directory", "/path/to/images")
-output_dir = st.text_input("Output Directory", "/path/to/output")
 
 if st.button("Run Pipeline"):
     if not os.path.exists(model_path):
@@ -26,7 +25,7 @@ if st.button("Run Pipeline"):
         st.error("Image directory does not exist.")
     else:
         st.info("Running pipeline... please wait.")
-        fig, logs = run_pipeline(model_path, image_dir, output_dir)
+        fig, logs = run_pipeline(model_path, image_dir)
 
         if logs:
             st.subheader("Log Output")

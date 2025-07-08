@@ -26,6 +26,7 @@ This repository provides a pipeline for detecting plants in field images, mappin
 ├── yolo_predictions.py       # Run YOLO inference → XML annotations
 ├── xml_utils.py              # Parse XML detection results
 ├── geo_utils.py              # Pixel→world conversion functions
+├── plot_map.py               # Plotting funcs
 └── config.py                 # Camera parameters (sensor, lens, height)
 ```
 
@@ -38,8 +39,7 @@ You have two options to run the pipeline:
    ```bash
    python pipeline.py \
      --model_path /path/to/best.pt \
-     --image_dir /path/to/images \
-     --output_dir /path/to/output
+     --image_dir /path/to/images
    ```
 
 2. **Streamlit Web Interface**  
@@ -58,7 +58,6 @@ You have two options to run the pipeline:
    In the web interface, you will see fields to enter:
    - `model_path` (the YOLO weights file)
    - `image_dir` (the folder with input images)
-   - `output_dir` (where results and cache will be saved)
 
    The pipeline does exactly the same processing steps (YOLO prediction, coordinate mapping, caching, and plotting) as the terminal version, but shows all logs and the heatmap in your browser.
 
@@ -108,7 +107,7 @@ You have two options to run the pipeline:
 
 ## Outputs
 
-1. **XML files** in `--output_dir`: Detection annotations per image.
+1. **XML files**: Detection annotations per image.
 2. **Cache**: `coordinates_cache.pkl` storing `{ image_filename: [(X,Y),…] }`.
 3. **Heatmap**: A Matplotlib window (or saved figure) showing plant-density.
 4. **Logs**: INFO/WARNING messages about progress, missing files, etc.
@@ -169,4 +168,6 @@ Adjust for your hardware.
 
 - [x] Add requirements
 - [ ] Integration of drone image processing
-- [ ] Improvement of caching
+- [x] Improvement of caching
+- [ ] Better results plot
+

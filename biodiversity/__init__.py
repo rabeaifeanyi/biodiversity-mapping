@@ -7,6 +7,7 @@ from .xml_utils import xml_unpack
 from .geo_utils import main_coordinates
 from .cache_utils import load_cache, save_cache
 from .config import CameraConfig
+from .plot_map import plot_map
 
 __all__ = [
     "run_yolo_prediction",
@@ -14,5 +15,6 @@ __all__ = [
     "main_coordinates",
     "load_cache",
     "save_cache",
-    "CameraConfig"
+    "CameraConfig",
+    "plot_map"
 ]

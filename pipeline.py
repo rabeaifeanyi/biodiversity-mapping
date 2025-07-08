@@ -10,7 +10,7 @@ This script implements a complete pipeline to:
 
 Usage:
 - From the terminal (CLI):
-    python pipeline.py --model_path ... --image_dir ... --output_dir ...
+    python pipeline.py --model_path ... --image_dir ...
 - From Streamlit or other Python code:
     from pipeline import run_pipeline
     fig, logs = run_pipeline(...)
@@ -32,17 +32,17 @@ from biodiversity import (
     main_coordinates,
     load_cache,
     save_cache,
-    CameraConfig
+    CameraConfig,
+    plot_map
 )
 
-def run_pipeline(model_path, image_dir, output_dir):
+def run_pipeline(model_path, image_dir):
     """
     Runs the full detection and mapping pipeline.
 
     Args:
         model_path (str): Path to the YOLO .pt weights file.
         image_dir (str): Directory containing input images.
-        output_dir (str): Directory where outputs (XML, cache, etc.) are saved.
 
     Returns:
         tuple:
@@ -63,11 +63,24 @@ def run_pipeline(model_path, image_dir, output_dir):
         logs.append(msg)
 
     log("Starting pipeline...")
-    output_dir = Path(output_dir)
+    output_dir = Path(image_dir)
     cache_path = output_dir / "coordinates_cache.pkl"
 
     cache = load_cache(cache_path)
     log("Cache loaded.")
+
+    if cache:
+        log("Using existing cache, skipping YOLO prediction.")
+        global_pos = []
+        for coords in cache.values():
+            global_pos.extend(coords)
+
+        if not global_pos:
+            log("Cache was empty, no coordinates to plot.")
+            return None, logs
+
+        fig = plot_map(global_pos, background_path=None)
+        return fig, logs
 
     run_yolo_prediction(model_path, image_dir)
     log("YOLO prediction completed.")
@@ -106,9 +119,14 @@ def run_pipeline(model_path, image_dir, output_dir):
                         width, height
                     )
 
+                    # if result:
+                    #     coords.append(result)
+                    #     global_pos.append(result)
+
                     if result:
-                        coords.append(result)
-                        global_pos.append(result)
+                        coords.append( (result[0], result[1], obj["name"], obj["confidence"]) )
+                        global_pos.append( (result[0], result[1], obj["name"], obj["confidence"]) )
+
 
                 cache[file] = coords
 
@@ -132,18 +150,7 @@ def run_pipeline(model_path, image_dir, output_dir):
     grid_coords = np.vstack([x_grid.ravel(), y_grid.ravel()])
     z = kde(grid_coords).reshape(x_grid.shape)
 
-    fig = plt.figure(figsize=(10, 8))
-    plt.title("🌿 Plant Heatmap (UTM Zone 33N)")
-    plt.xlabel("UTM X (m)")
-    plt.ylabel("UTM Y (m)")
-    plt.imshow(z.T, origin='lower',
-               extent=[x_coords.min(), x_coords.max(), y_coords.min(), y_coords.max()],
-               cmap='hot', alpha=0.7)
-    plt.colorbar(label='Relative Density')
-    plt.scatter(x_coords, y_coords, s=10, c='blue', alpha=0.4)
-    plt.tight_layout()
-
-    log("Heatmap generated successfully.")
+    fig = plot_map(global_pos, background_path=None) #TODO
     return fig, logs
 
 
@@ -151,7 +158,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Biodiversity Mapping Pipeline")
     parser.add_argument("--model_path", type=str, default=os.path.join("model", "best.pt"))
     parser.add_argument("--image_dir", type=str, default=os.path.join("images", "predict images"))
-    parser.add_argument("--output_dir", type=str, default=os.path.join("images", "predict images", "all"))
     args = parser.parse_args()
 
-    run_pipeline(args.model_path, args.image_dir, args.output_dir)
+    run_pipeline(args.model_path, args.image_dir)
