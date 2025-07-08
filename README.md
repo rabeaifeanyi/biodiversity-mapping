@@ -167,5 +167,6 @@ Adjust for your hardware.
 
 ## TODOs
 
-- [ ] Add todos
-- [ ] Add requirements
+- [x] Add requirements
+- [ ] Integration of drone image processing
+- [ ] Improvement of caching
