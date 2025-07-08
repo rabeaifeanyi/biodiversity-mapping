@@ -26,11 +26,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
 
-from yolo_predictions import run_yolo_prediction
-from xml_utils import xml_unpack
-from geo_utils import main_coordinates
-from cache_utils import load_cache, save_cache
-from config import CameraConfig
+from biodiversity import (
+    run_yolo_prediction,
+    xml_unpack,
+    main_coordinates,
+    load_cache,
+    save_cache,
+    CameraConfig
+)
+
 
 def run_pipeline(model_path, image_dir, output_dir):
     """
