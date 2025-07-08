@@ -4,10 +4,13 @@ This repository provides a pipeline for detecting plants in field images, mappin
 
 ## Prerequisites
 
-- Python 3.8+ environment
-- Installed packages:
+- Python 3.8+ environment (eg. micromamba or conda)
   ```bash
-  pip install
+   micromamba create --name mwrs python=3.10
+   micromamba activate mwrs
+   micromamba install pytorch torchvision torchaudio pytorch-cuda=11.7 -c pytorch -c nvidia  
+   micromamba install numpy pillow   
+   pip install ultralytics      
   ```
 - A trained YOLO model file (e.g., `best.pt`)
 - A folder of input images (PNG/JPG/JPEG)
@@ -132,16 +135,6 @@ Make sure you have **Python 3.8 or newer** installed.
    pip install streamlit
    ```
 
-### Quick Test
-
-To verify installation, run:
-
-```bash
-python pipeline.py --help
-```
-
-You should see the CLI help message.
-
 ### Streamlit Interface
 
 To launch the browser-based UI:
@@ -170,4 +163,4 @@ Adjust for your hardware.
 - [ ] Integration of drone image processing
 - [x] Improvement of caching
 - [ ] Better results plot
-
+- [ ] Underlay of satelite images

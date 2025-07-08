@@ -10,13 +10,14 @@ This script does not add any extra functionality beyond replacing the terminal C
 It is intended as a simple alternative to command-line execution.
 """
 import streamlit as st
+import pandas as pd
 import os
 from pipeline import run_pipeline
 
-st.title("🌿 Biodiversity Mapping Pipeline")
+st.title("🌿 Biodiversity mapping pipeline")
 
-model_path = st.text_input("YOLO Model Path", "/path/to/best.pt")
-image_dir = st.text_input("Input Images Directory", "/path/to/images")
+model_path = st.text_input("YOLO model path", "/path/to/best.pt")
+image_dir = st.text_input("Path to input images directory", "/path/to/images")
 
 if st.button("Run Pipeline"):
     if not os.path.exists(model_path):
@@ -25,11 +26,26 @@ if st.button("Run Pipeline"):
         st.error("Image directory does not exist.")
     else:
         st.info("Running pipeline... please wait.")
-        fig, logs = run_pipeline(model_path, image_dir)
+        fig, logs, stats = run_pipeline(model_path, image_dir)
 
         if logs:
             st.subheader("Log Output")
             st.text("\n".join(logs))
+
+        if stats:
+            if "detections_per_class" in stats:
+                st.subheader("Summary of detections per class")
+                df_class = pd.DataFrame(
+                    [{"Class": k, "Count": v} for k, v in stats["detections_per_class"].items()]
+                )
+                st.table(df_class.style.hide(axis="index"))
+
+            if "detections_per_image_distribution" in stats:
+                st.subheader("Distribution of detections per image")
+                df_dist = pd.DataFrame(
+                    [{"Detections": k, "Number of Images": v} for k, v in sorted(stats["detections_per_image_distribution"].items())]
+                )
+                st.table(df_dist.style.hide(axis="index"))
 
         if fig:
             st.pyplot(fig)

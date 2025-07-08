@@ -6,25 +6,16 @@ This script implements a complete pipeline to:
 - Parse the resulting XML annotations.
 - Transform detected bounding boxes into world coordinates.
 - Cache the coordinates to avoid recomputation.
-- Generate a heatmap of all detected plant positions.
+- Generate a scatter plot of all detected plant positions.
 
 Usage:
-- From the terminal (CLI):
     python pipeline.py --model_path ... --image_dir ...
-- From Streamlit or other Python code:
-    from pipeline import run_pipeline
-    fig, logs = run_pipeline(...)
-
-Notes:
-- This script requires a trained YOLO model and corresponding image metadata (JSON files).
-- The pipeline outputs logs and a matplotlib figure.
 """
+
 import argparse
 import os
 from pathlib import Path
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy.stats import gaussian_kde
 
 from biodiversity import (
     run_yolo_prediction,
@@ -58,7 +49,6 @@ def run_pipeline(model_path, image_dir):
         - Generate a heatmap plot.
     """
     logs = []
-
     def log(msg):
         logs.append(msg)
 
@@ -69,24 +59,45 @@ def run_pipeline(model_path, image_dir):
     cache = load_cache(cache_path)
     log("Cache loaded.")
 
-    if cache:
+    # If cache exists, skip YOLO
+    if cache and any(k != "_stats" for k in cache.keys()):
         log("Using existing cache, skipping YOLO prediction.")
         global_pos = []
-        for coords in cache.values():
+        for k, coords in cache.items():
+            if k == "_stats":
+                continue
             global_pos.extend(coords)
 
         if not global_pos:
             log("Cache was empty, no coordinates to plot.")
             return None, logs
 
-        fig = plot_map(global_pos, background_path=None)
-        return fig, logs
+        # Wenn _stats vorhanden: anzeigen
+        # Wenn _stats vorhanden: anzeigen
+        if "_stats" in cache:
+            stats = cache["_stats"]
 
+            # Jetzt VERTEILUNG neu berechnen und in stats speichern
+            counts = list(stats["detections_per_image"].values())
+            distribution = {}
+            for c in counts:
+                distribution.setdefault(c, 0)
+                distribution[c] += 1
+            stats["detections_per_image_distribution"] = distribution
+
+        fig = plot_map(global_pos, background_path=None)
+        return fig, logs, stats
+
+    # No cache? Run YOLO
     run_yolo_prediction(model_path, image_dir)
     log("YOLO prediction completed.")
 
     camera_cfg = CameraConfig()
     global_pos = []
+    stats = {
+        "detections_per_image": {},
+        "detections_per_class": {}
+    }
 
     for file in os.listdir(output_dir):
         if file.lower().endswith(('.png', '.jpg', '.jpeg')):
@@ -97,61 +108,51 @@ def run_pipeline(model_path, image_dir):
                 log(f"{basename}: XML missing, skipping.")
                 continue
 
-            if file in cache:
-                coords = cache[file]
-                global_pos.extend(coords)
-                log(f"Loaded cached coordinates for {file}.")
-            else:
-                objects, width, height = xml_unpack(xml_path)
-                coords = []
+            objects, width, height = xml_unpack(xml_path)
+            coords = []
 
-                log(f"Processing {file}: {len(objects)} detections found.")
-                for obj in objects:
-                    bbox = obj['bbox']
-                    x_pixel = (bbox['xmin'] + bbox['xmax']) / 2
-                    y_pixel = (bbox['ymin'] + bbox['ymax']) / 2
+            log(f"Processing {file}: {len(objects)} detections found.")
+            stats["detections_per_image"][file] = len(objects)
 
-                    result = main_coordinates(
-                        x_pixel, y_pixel,
-                        camera_cfg,
-                        output_dir,
-                        file,
-                        width, height
-                    )
+            for obj in objects:
+                bbox = obj['bbox']
+                x_pixel = (bbox['xmin'] + bbox['xmax']) / 2
+                y_pixel = (bbox['ymin'] + bbox['ymax']) / 2
 
-                    # if result:
-                    #     coords.append(result)
-                    #     global_pos.append(result)
+                result = main_coordinates(
+                    x_pixel, y_pixel,
+                    camera_cfg,
+                    output_dir,
+                    file,
+                    width, height
+                )
 
-                    if result:
-                        coords.append( (result[0], result[1], obj["name"], obj["confidence"]) )
-                        global_pos.append( (result[0], result[1], obj["name"], obj["confidence"]) )
+                if result:
+                    coords.append((result[0], result[1], obj["name"], obj["confidence"]))
+                    global_pos.append((result[0], result[1], obj["name"], obj["confidence"]))
+                    stats["detections_per_class"].setdefault(obj["name"], 0)
+                    stats["detections_per_class"][obj["name"]] += 1
 
+            cache[file] = coords
 
-                cache[file] = coords
-
+    # Save stats in cache
+    cache["_stats"] = stats
     save_cache(cache_path, cache)
     log(f"Saved cache with {len(global_pos)} total coordinates.")
 
+    log("Summary of detections per image:")
+    for img, count in stats["detections_per_image"].items():
+        log(f" - {img}: {count} detections")
+    log("Summary of detections per class:")
+    for cls, count in stats["detections_per_class"].items():
+        log(f" - {cls}: {count} detections")
+
     if not global_pos:
-        log("No coordinates found - no heatmap.")
+        log("No detections.")
         return None, logs
 
-    x_coords = np.array([p[0] for p in global_pos])
-    y_coords = np.array([p[1] for p in global_pos])
-
-    xy = np.vstack([x_coords, y_coords])
-    kde = gaussian_kde(xy)
-
-    x_grid, y_grid = np.mgrid[
-        x_coords.min():x_coords.max():100j,
-        y_coords.min():y_coords.max():100j
-    ]
-    grid_coords = np.vstack([x_grid.ravel(), y_grid.ravel()])
-    z = kde(grid_coords).reshape(x_grid.shape)
-
-    fig = plot_map(global_pos, background_path=None) #TODO
-    return fig, logs
+    fig = plot_map(global_pos, background_path=None)
+    return fig, logs, stats
 
 
 if __name__ == "__main__":
