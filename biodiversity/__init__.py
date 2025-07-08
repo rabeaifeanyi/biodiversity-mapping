@@ -8,6 +8,8 @@ from .geo_utils import main_coordinates
 from .cache_utils import load_cache, save_cache
 from .config import CameraConfig
 from .plot_map import plot_map
+#from .plot_map_satelite import plot_map
+
 
 __all__ = [
     "run_yolo_prediction",
