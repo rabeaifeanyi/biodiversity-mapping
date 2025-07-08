@@ -103,10 +103,8 @@ You have two options to run the pipeline:
 
      where `r_z` is the rotation around the vertical axis in degrees.
 
-5. **Heatmap Generation** (`pipeline.py`)
-   - Stacks all `(X,Y)` coordinates.
-   - Computes Gaussian KDE over a grid.
-   - Plots density map with Matplotlib, overlaying raw points.
+5. **Plot Generation** (`pipeline.py`)
+   - Simple scatter plot of coordinates
 
 ## Outputs
 
