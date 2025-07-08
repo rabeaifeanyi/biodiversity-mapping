@@ -163,4 +163,4 @@ Adjust for your hardware.
 - [ ] Integration of drone image processing
 - [x] Improvement of caching
 - [ ] Better results plot
-- [ ] Underlay of satelite images
+- [x] Underlay of satelite images (temproary fix)
