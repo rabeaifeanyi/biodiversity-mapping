@@ -29,7 +29,6 @@ def plot_map(global_pos, r=20, zoom=17):
     classes = sorted(set(p[2] for p in global_pos))
     colors = plt.cm.tab10.colors
 
-    # Übersicht mit Basemap
     for idx, class_name in enumerate(classes):
         xs = [p[0] for p in global_pos if p[2]==class_name]
         ys = [p[1] for p in global_pos if p[2]==class_name]
@@ -57,7 +56,6 @@ def plot_map(global_pos, r=20, zoom=17):
     ax1.legend()
     ax1.grid(True)
 
-    # Nahansicht ohne Basemap
     for idx, class_name in enumerate(classes):
         xs = [p[0] for p in global_pos if p[2]==class_name]
         ys = [p[1] for p in global_pos if p[2]==class_name]
@@ -81,7 +79,6 @@ def plot_map(global_pos, r=20, zoom=17):
 
     plt.tight_layout()
 
-    # Optional: WGS84-Koordinate debug
     t = Transformer.from_crs("EPSG:32633","EPSG:4326")
     lon, lat = t.transform(361088.77, 5815180.05)
     print(f"Sample WGS84: lon {lon:.6f}, lat {lat:.6f}")

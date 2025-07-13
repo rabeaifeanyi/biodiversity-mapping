@@ -40,9 +40,7 @@ You have two options to run the pipeline:
 1. **Terminal version**  
    Run directly in your console:
    ```bash
-   python pipeline.py \
-     --model_path /path/to/best.pt \
-     --image_dir /path/to/images
+   python pipeline.py --model_path /path/to/best.pt --image_dir /path/to/images
    ```
 
 2. **Streamlit Web Interface**  
@@ -158,7 +156,11 @@ Adjust for your hardware.
 ## TODOs
 
 - [x] Add requirements
-- [ ] Integration of drone image processing
+- [x] Integration of drone image processing
 - [x] Improvement of caching
-- [ ] Better results plot
+- [x] Better results plot
 - [x] Underlay of satelite images (temproary fix)
+- [ ] Underlay of real stiched picture
+- [ ] Heatmap
+- [ ] Drone camera config and drone flag in terminal
+- [ ] Examples

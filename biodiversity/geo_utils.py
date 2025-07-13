@@ -2,6 +2,9 @@ import json
 import numpy as np #type:ignore
 import os
 import logging
+from PIL import Image
+import PIL.ExifTags as ExifTags
+from pyproj import Transformer
 
 def json_unpack(folder, image_file):
     """
@@ -103,6 +106,40 @@ def transform(transform_translation_x, transform_translation_y, transform_rotati
 
     return float(absolute_x), float(absolute_y)
 
+def extract_gps_from_exif(image_path):
+    """
+    Extracts GPS Latitude and Longitude from EXIF.
+    Returns (lat, lon) or None.
+    """
+    img = Image.open(image_path)
+    exif_data = img._getexif()
+
+    if not exif_data:
+        return None
+
+    gps_info = None
+    for tag, value in exif_data.items():
+        decoded = ExifTags.TAGS.get(tag, tag)
+        if decoded == "GPSInfo":
+            gps_info = value
+            break
+
+    if not gps_info:
+        return None
+
+    def _convert(coord, ref):
+        d = float(coord[0])
+        m = float(coord[1])
+        s = float(coord[2])
+        sign = -1 if ref in ["S", "W"] else 1
+        return sign * (d + m/60 + s/3600)
+
+
+    lat = _convert(gps_info[2], gps_info[1])
+    lon = _convert(gps_info[4], gps_info[3])
+
+    return (lat, lon)
+
 def main_coordinates(x_pixel, y_pixel, camera_cfg, folder, image_file, width, height):
     """
     Computes the absolute world coordinates for a pixel position in an image.
@@ -125,24 +162,47 @@ def main_coordinates(x_pixel, y_pixel, camera_cfg, folder, image_file, width, he
         tuple or None: (absolute_x, absolute_y) coordinates in meters, or None if JSON is missing.
     """
     data = json_unpack(folder, image_file)
-    if not data:
-        return None
+    if data:
+        flat = flatten_json(data)
+        tx = flat["transform_translation_x"]
+        ty = flat["transform_translation_y"]
+        rz = flat["transform_rotation_z"]
 
-    flat = flatten_json(data)
+        x_trans, y_trans = pixel_to_world(
+            x_pixel, y_pixel,
+            width, height,
+            camera_cfg.sensor_width_mm,
+            camera_cfg.sensor_height_mm,
+            camera_cfg.focal_length_mm,
+            camera_cfg.camera_height_m
+        )
 
-    tx = flat["transform_translation_x"]
-    ty = flat["transform_translation_y"]
-    rz = flat["transform_rotation_z"]
+        absolute_x, absolute_y = transform(tx, ty, rz, x_trans, y_trans)
+        return absolute_x, absolute_y
 
-    x_trans, y_trans = pixel_to_world(
-        x_pixel, y_pixel,
-        width, height,
-        camera_cfg.sensor_width_mm,
-        camera_cfg.sensor_height_mm,
-        camera_cfg.focal_length_mm,
-        camera_cfg.camera_height_m
-    )
+    else: # drone case
+        gps = extract_gps_from_exif(os.path.join(folder, image_file))
+        if not gps:
+            return None
 
-    absolute_x, absolute_y = transform(tx, ty, rz, x_trans, y_trans)
+        lat, lon = gps
 
-    return absolute_x, absolute_y
+        altitude = camera_cfg.camera_height_m
+
+        x_trans, y_trans = pixel_to_world(
+            x_pixel, y_pixel,
+            width, height,
+            camera_cfg.sensor_width_mm,
+            camera_cfg.sensor_height_mm,
+            camera_cfg.focal_length_mm,
+            altitude
+        )
+
+        transformer = Transformer.from_crs("EPSG:4326", "EPSG:32633")
+        tx, ty = transformer.transform(lon, lat)
+
+        absolute_x = tx + x_trans
+        absolute_y = ty + y_trans
+
+        return absolute_x, absolute_y
+

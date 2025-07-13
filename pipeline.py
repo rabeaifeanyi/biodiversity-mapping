@@ -15,7 +15,6 @@ Usage:
 import argparse
 import os
 from pathlib import Path
-import numpy as np
 
 from biodiversity import (
     run_yolo_prediction,
@@ -30,23 +29,12 @@ from biodiversity import (
 def run_pipeline(model_path, image_dir):
     """
     Runs the full detection and mapping pipeline.
-
-    Args:
-        model_path (str): Path to the YOLO .pt weights file.
-        image_dir (str): Directory containing input images.
-
     Returns:
         tuple:
-            - fig (matplotlib.figure.Figure or None): Heatmap figure, or None if no data.
-            - logs (list of str): Log messages describing the process.
-
-    Steps performed:
-        - Load or create a cache of coordinates.
-        - Run YOLO predictions on input images.
-        - Parse XML annotations.
-        - Convert pixel positions to world coordinates.
-        - Save updated cache.
-        - Generate a heatmap plot.
+            - fig (matplotlib.figure.Figure or None)
+            - logs (list of str)
+            - stats (dict)
+            - global_pos (list of detections)
     """
     logs = []
     def log(msg):
@@ -59,7 +47,6 @@ def run_pipeline(model_path, image_dir):
     cache = load_cache(cache_path)
     log("Cache loaded.")
 
-    # If cache exists, skip YOLO
     if cache and any(k != "_stats" for k in cache.keys()):
         log("Using existing cache, skipping YOLO prediction.")
         global_pos = []
@@ -70,25 +57,19 @@ def run_pipeline(model_path, image_dir):
 
         if not global_pos:
             log("Cache was empty, no coordinates to plot.")
-            return None, logs
+            return None, logs, {}, []
 
-        # Wenn _stats vorhanden: anzeigen
-        # Wenn _stats vorhanden: anzeigen
-        if "_stats" in cache:
-            stats = cache["_stats"]
-
-            # Jetzt VERTEILUNG neu berechnen und in stats speichern
-            counts = list(stats["detections_per_image"].values())
-            distribution = {}
-            for c in counts:
-                distribution.setdefault(c, 0)
-                distribution[c] += 1
-            stats["detections_per_image_distribution"] = distribution
+        stats = cache.get("_stats", {})
+        counts = list(stats.get("detections_per_image", {}).values())
+        distribution = {}
+        for c in counts:
+            distribution.setdefault(c, 0)
+            distribution[c] += 1
+        stats["detections_per_image_distribution"] = distribution
 
         fig = plot_map(global_pos)
-        return fig, logs, stats
+        return fig, logs, stats, global_pos
 
-    # No cache? Run YOLO
     run_yolo_prediction(model_path, image_dir)
     log("YOLO prediction completed.")
 
@@ -135,7 +116,6 @@ def run_pipeline(model_path, image_dir):
 
             cache[file] = coords
 
-    # Save stats in cache
     cache["_stats"] = stats
     save_cache(cache_path, cache)
     log(f"Saved cache with {len(global_pos)} total coordinates.")
@@ -149,10 +129,10 @@ def run_pipeline(model_path, image_dir):
 
     if not global_pos:
         log("No detections.")
-        return None, logs
+        return None, logs, stats, []
 
-    fig = plot_map(global_pos, background_path=None)
-    return fig, logs, stats
+    fig = plot_map(global_pos)
+    return fig, logs, stats, global_pos
 
 
 if __name__ == "__main__":
