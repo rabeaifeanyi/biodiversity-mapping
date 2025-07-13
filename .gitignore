@@ -1,8 +1,10 @@
 __pycache__/
 *.py[cod]
-*.pkl
 *.cache
 *.log
-
 *.pt
 model/
+
+*.pkl
+
+!examples/small_drone/coordinates_cache.pkl
