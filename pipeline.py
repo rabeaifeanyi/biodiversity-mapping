@@ -23,10 +23,11 @@ from biodiversity import (
     load_cache,
     save_cache,
     CameraConfig,
+    DroneCameraConfig,
     plot_map
 )
 
-def run_pipeline(model_path, image_dir):
+def run_pipeline(model_path, image_dir, camera="robot"):
     """
     Runs the full detection and mapping pipeline.
     Returns:
@@ -73,7 +74,11 @@ def run_pipeline(model_path, image_dir):
     run_yolo_prediction(model_path, image_dir)
     log("YOLO prediction completed.")
 
-    camera_cfg = CameraConfig()
+    if camera == "robot":
+        camera_cfg = CameraConfig()
+    else:
+        camera_cfg = DroneCameraConfig()
+        
     global_pos = []
     stats = {
         "detections_per_image": {},
@@ -139,6 +144,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Biodiversity Mapping Pipeline")
     parser.add_argument("--model_path", type=str, default=os.path.join("model", "best.pt"))
     parser.add_argument("--image_dir", type=str, default=os.path.join("images", "predict images"))
+    parser.add_argument("--camera", type=str, default="robot", choices=["robot", "drone"],
+                        help="Choose camera configuration: 'robot' or 'drone'")
+    
     args = parser.parse_args()
 
     run_pipeline(args.model_path, args.image_dir)

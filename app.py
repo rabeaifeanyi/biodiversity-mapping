@@ -24,7 +24,7 @@ st.title("🌿 Biodiversity mapping pipeline")
 
 model_path = st.text_input("YOLO model path", "/path/to/best.pt")
 
-image_dir = st.text_input("Path to input images directory", "/path/to/images")
+image_dir = st.text_input("Path to input images directory", "/examples/small_drone")
 
 mapbox_token = st.text_input(
     "Optional mapbox access token (for satellite imagery). Leave blank to use OpenStreetMap. The token is free, but an account is needed.", 
@@ -44,7 +44,11 @@ if st.button("Run Pipeline"):
         st.error("Image directory does not exist.")
     else:
         st.info("Running pipeline... please wait.")
-        fig, logs, stats, global_pos = run_pipeline(model_path, image_dir)
+        if not robot_tick:
+            fig, logs, stats, global_pos = run_pipeline(model_path, image_dir, "drone")
+        else:
+            fig, logs, stats, global_pos = run_pipeline(model_path, image_dir)
+
         st.session_state.results = (fig, logs, stats, global_pos)
 
 if st.session_state.results:
