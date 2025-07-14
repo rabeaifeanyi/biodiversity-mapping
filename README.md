@@ -149,6 +149,12 @@ class CameraConfig:
     sensor_height_mm = 4.8
     focal_length_mm = 3.6
     camera_height_m = 0.5
+
+class DroneCameraConfig:
+    sensor_width_mm = 35.9
+    sensor_height_mm = 24.0
+    focal_length_mm: float = 35.0
+    camera_height_m: float = 6.0
 ```
 
 Adjust for your hardware.
@@ -160,7 +166,9 @@ Adjust for your hardware.
 - [x] Improvement of caching
 - [x] Better results plot
 - [x] Underlay of satelite images (temproary fix)
-- [ ] Underlay of real stiched picture
-- [ ] Heatmap
-- [ ] Drone camera config and drone flag in terminal
+- [ ] Underlay of real stiched picture on top of the satelite image
+- [ ] Heatmap view
+- [x] Drone camera config and drone flag in terminal
 - [ ] Examples
+      - [x] Drone
+      - [ ] Robot
