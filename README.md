@@ -173,3 +173,4 @@ Adjust for your hardware.
       - [x] Drone
       - [ ] Robot
 - [ ] Testing
+- [ ] Add screenshots to documentation
