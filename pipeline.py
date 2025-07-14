@@ -114,8 +114,8 @@ def run_pipeline(model_path, image_dir, camera="robot"):
                 )
 
                 if result:
-                    coords.append((result[0], result[1], obj["name"], obj["confidence"]))
-                    global_pos.append((result[0], result[1], obj["name"], obj["confidence"]))
+                    coords.append((result[0], result[1], obj["name"], obj["confidence"], file))
+                    global_pos.append((result[0], result[1], obj["name"], obj["confidence"], file))
                     stats["detections_per_class"].setdefault(obj["name"], 0)
                     stats["detections_per_class"][obj["name"]] += 1
 

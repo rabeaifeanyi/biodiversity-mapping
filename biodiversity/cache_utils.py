@@ -11,9 +11,6 @@ def load_cache(path):
     Returns:
         dict: The cache dictionary containing processed image coordinates.
               Returns an empty dict if the file does not exist.
-
-    Logs:
-        INFO when the cache is loaded or when no cache was found.
     """
     try:
         with open(path, "rb") as f:
@@ -31,9 +28,6 @@ def save_cache(path, cache):
     Args:
         path (str or Path): Path to save the cache file.
         cache (dict): The cache dictionary to serialize.
-
-    Logs:
-        INFO when the cache is saved.
     """
     with open(path, "wb") as f:
         pickle.dump(cache, f)

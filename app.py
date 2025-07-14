@@ -17,6 +17,9 @@ from biodiversity import deduplicate_points
 import plotly.express as px
 from pyproj import Transformer
 import plotly.graph_objects as go
+import xml.etree.ElementTree as ET
+from PIL import Image, ImageDraw, ImageFont
+
 
 START_THRESHOLD = 0.5
 
@@ -75,7 +78,7 @@ if st.session_state.results:
         if global_pos:
             global_pos = deduplicate_points(global_pos, distance_threshold=threshold)
 
-            df = pd.DataFrame(global_pos, columns=["X", "Y", "Class", "Confidence"])
+            df = pd.DataFrame(global_pos, columns=["X", "Y", "Class", "Confidence", "Filename"])
 
             transformer = Transformer.from_crs("EPSG:32633", "EPSG:4326", always_xy=True)
 
@@ -108,7 +111,7 @@ if st.session_state.results:
                 lat="lat",
                 lon="lon",
                 hover_name="Class",
-                hover_data=["Confidence"],
+                hover_data=["Confidence", "Filename"],
                 color="Class",
                 zoom=1,
                 height=700
@@ -159,3 +162,60 @@ if st.session_state.results:
                 )
 
             st.plotly_chart(fig, use_container_width=True)
+
+    preview_dir = image_dir
+
+    # Hole alle Bilddateien
+    image_files = sorted([
+        f for f in os.listdir(preview_dir)
+        if f.lower().endswith((".jpg", ".jpeg", ".png"))
+    ])
+
+    selected_image = st.selectbox(
+        "Select image to preview predictions",
+        options=[""] + image_files,  # "" als None-Option
+        format_func=lambda x: "Choose an image..." if x == "" else x
+    )
+
+    if selected_image.strip():
+        image_path = os.path.join(preview_dir, selected_image)
+
+        if not os.path.exists(image_path):
+            st.error("Specified image does not exist.")
+        else:
+            img = Image.open(image_path).convert("RGB")
+            draw = ImageDraw.Draw(img)
+
+            xml_path = os.path.splitext(image_path)[0] + ".xml"
+
+            if not os.path.exists(xml_path):
+                st.warning("No XML file found for this image.")
+            else:
+                tree = ET.parse(xml_path)
+                root = tree.getroot()
+                for obj in root.findall("object"):
+                    cls = obj.find("name").text
+                    conf = float(obj.find("confidence").text)
+                    bbox = obj.find("bndbox")
+                    xmin = int(bbox.find("xmin").text)
+                    ymin = int(bbox.find("ymin").text)
+                    xmax = int(bbox.find("xmax").text)
+                    ymax = int(bbox.find("ymax").text)
+
+                    draw.rectangle(
+                        [(xmin, ymin), (xmax, ymax)],
+                        outline="red",
+                        width=20
+                    )
+                    font = ImageFont.truetype("arial.ttf", size=150)
+
+
+                    draw.text(
+                        (xmin-60, ymax + 10),
+                        f"{cls} ({conf:.2f})",
+                        fill="red",
+                        font=font
+                    )
+
+
+                st.image(img)

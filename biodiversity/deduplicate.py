@@ -34,5 +34,6 @@ def deduplicate_points(points, distance_threshold=0.5):
                     break
 
     deduped = [points[i] for i in sorted(keep_indices)]
+
     return deduped
 

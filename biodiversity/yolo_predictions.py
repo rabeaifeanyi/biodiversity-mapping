@@ -7,6 +7,7 @@ import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
 from ultralytics import YOLO
+import networkx as nx
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 cudnn.benchmark = True
@@ -144,3 +145,112 @@ def run_yolo_prediction(
             tree = ET.ElementTree(annotation)
             tree.write(xml_path)
             logging.info(f"XML saved: {xml_path} (total detections: {detections})")
+
+
+
+
+def intersection_over_union(boxA, boxB):
+    # This code is copied!
+    # Source: https://pyimagesearch.com/2016/11/07/intersection-over-union-iou-for-object-detection/
+
+    xA = max(boxA[0], boxB[0])
+    yA = max(boxA[1], boxB[1])
+    xB = min(boxA[2], boxB[2])
+    yB = min(boxA[3], boxB[3])
+
+    interArea = max(0, xB - xA + 1) * max(0, yB - yA + 1)
+
+    if interArea == 0:
+        return 0.0
+
+    boxAArea = (boxA[2] - boxA[0] + 1) * (boxA[3] - boxA[1] + 1)
+    boxBArea = (boxB[2] - boxB[0] + 1) * (boxB[3] - boxB[1] + 1)
+
+    iou = interArea / float(boxAArea + boxBArea - interArea)
+
+    return iou
+
+
+def cluster_boxes(boxes, iou_threshold=0.3):
+    """
+    boxes: list of dicts {"box":(xmin,ymin,xmax,ymax), "class":str, "conf":float}
+    Returns list of clusters (list of lists of indices)
+    """
+    G = nx.Graph() 
+    G.add_nodes_from(range(len(boxes)))
+    for i in range(len(boxes)):
+        for j in range(i+1, len(boxes)):
+            if boxes[i]["class"] != boxes[j]["class"]:
+                continue
+            if intersection_over_union(boxes[i]["box"], boxes[j]["box"]) > iou_threshold:
+                G.add_edge(i, j)
+    clusters = list(nx.connected_components(G))
+    return clusters
+
+
+
+def parse_xml(xml_path):
+    tree = ET.parse(xml_path)
+    root = tree.getroot()
+    objects = []
+    for obj in root.findall("object"):
+        cls = obj.find("name").text
+        conf = float(obj.find("confidence").text)
+        bbox = obj.find("bndbox")
+        xmin = int(bbox.find("xmin").text)
+        ymin = int(bbox.find("ymin").text)
+        xmax = int(bbox.find("xmax").text)
+        ymax = int(bbox.find("ymax").text)
+        objects.append({
+            "elem": obj,
+            "class": cls,
+            "conf": conf,
+            "box": (xmin, ymin, xmax, ymax)
+        })
+    return tree, root, objects
+
+
+
+def deduplicate_xml_in_folder(folder, iou_threshold=0.001):
+    xml_files = [f for f in os.listdir(folder) if f.lower().endswith(".xml")]
+    if not xml_files:
+        print("No XML files found.")
+        return
+
+    for xml_file in xml_files:
+        xml_path = os.path.join(folder, xml_file)
+        tree, root, objects = parse_xml(xml_path)
+
+        if len(objects) <= 1:
+            continue
+
+        clusters = cluster_boxes(objects, iou_threshold)
+
+        keep_ids = set()
+        for cluster in clusters:
+            if len(cluster) == 1:
+                keep_ids.update(cluster)
+            else:
+                best = max(cluster, key=lambda i: objects[i]["conf"])
+                keep_ids.add(best)
+
+        if len(keep_ids) == len(objects):
+            continue
+
+        print(f"[{xml_file}] Removed {len(objects) - len(keep_ids)} duplicates.")
+
+        for obj in root.findall("object"):
+            root.remove(obj)
+        for i in sorted(keep_ids):
+            root.append(objects[i]["elem"])
+
+        tree.write(xml_path)
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Deduplicate bounding boxes in XML files.")
+    parser.add_argument("--folder", type=str, required=True, help="Folder containing XML files.")
+    args = parser.parse_args()
+
+    deduplicate_xml_in_folder(args.folder)
