@@ -173,6 +173,36 @@ if st.session_state.results:
 
             st.plotly_chart(fig, use_container_width=True)
 
+
+            # Heatmap
+            with st.expander("Heatmap of detections", expanded=False):
+                fig_heatmap = px.density_mapbox(
+                    df_filtered,
+                    lat="lat",
+                    lon="lon",
+                    z='Confidence',  # wenn du einen Wert gewichten willst (z.B. Confidence), hier angeben
+                    radius=20,  # Radius der Glättung in Pixel
+                    hover_name="Class",
+                    hover_data=["Confidence", "Filename"],
+                    color_continuous_scale="Viridis",
+                    mapbox_style="satellite" if mapbox_token else "open-street-map",
+                    center=dict(lat=df["lat"].mean(), lon=df["lon"].mean()),
+                    zoom=19 if mapbox_token else 18,
+                    height=700
+                )
+
+                if mapbox_token:
+                    fig_heatmap.update_layout(
+                        mapbox_accesstoken=mapbox_token,
+                        margin={"r":0,"t":0,"l":0,"b":0}
+                    )
+                else:
+                    fig_heatmap.update_layout(
+                        margin={"r":0,"t":0,"l":0,"b":0}
+                    )
+
+                st.plotly_chart(fig_heatmap, use_container_width=True)
+
     preview_dir = image_dir
 
     # Hole alle Bilddateien
