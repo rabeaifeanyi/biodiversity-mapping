@@ -140,6 +140,34 @@ def extract_gps_from_exif(image_path):
 
     return (lat, lon)
 
+def get_utm_transformer(lat, lon):
+        """
+        Gibt einen Transformer von WGS84 → UTM passend zur Position zurück.
+        
+        Args:
+            lat (float): Breitengrad
+            lon (float): Längengrad
+            
+        Returns:
+            Transformer: pyproj Transformer-Objekt
+        """
+        # Berechne UTM-Zone
+        zone = int((lon + 180) / 6) + 1
+        # Bestimme Nord/Süd
+        hemisphere = 'north' if lat >= 0 else 'south'
+        
+        # Baue UTM CRS-String
+        if hemisphere == 'north':
+            epsg_code = 32600 + zone  # Nordhalbkugel
+        else:
+            epsg_code = 32700 + zone  # Südhalbkugel
+            
+        print(f"UTM Zone: {zone} {hemisphere} (EPSG:{epsg_code})")
+        
+        # Erzeuge Transformer
+        transformer = Transformer.from_crs("EPSG:4326", f"EPSG:{epsg_code}", always_xy=True)
+        return transformer
+
 def main_coordinates(x_pixel, y_pixel, camera_cfg, folder, image_file, width, height):
     """
     Computes the absolute world coordinates for a pixel position in an image.
@@ -198,11 +226,12 @@ def main_coordinates(x_pixel, y_pixel, camera_cfg, folder, image_file, width, he
             altitude
         )
 
-        transformer = Transformer.from_crs("EPSG:4326", "EPSG:32633")
-        tx, ty = transformer.transform(lon, lat)
+    transformer = get_utm_transformer(lat, lon)
+    tx, ty = transformer.transform(lon, lat)
 
-        absolute_x = tx + x_trans
-        absolute_y = ty + y_trans
 
-        return absolute_x, absolute_y
+    absolute_x = tx + x_trans
+    absolute_y = ty + y_trans
+
+    return absolute_x, absolute_y
 
