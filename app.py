@@ -19,6 +19,8 @@ from pyproj import Transformer
 import plotly.graph_objects as go
 import xml.etree.ElementTree as ET
 from PIL import Image, ImageDraw, ImageFont
+from pyproj import Transformer
+
 
 
 START_THRESHOLD = 0.5
@@ -54,6 +56,10 @@ if st.button("Run Pipeline"):
 
         st.session_state.results = (fig, logs, stats, global_pos)
 
+def get_transformer_for_utm_zone(zone, north=True):
+    epsg = 32600 + zone if north else 32700 + zone
+    return Transformer.from_crs(f"EPSG:{epsg}", "EPSG:4326", always_xy=True)
+
 if st.session_state.results:
     fig, logs, stats, global_pos = st.session_state.results
     if logs:
@@ -80,7 +86,11 @@ if st.session_state.results:
 
             df = pd.DataFrame(global_pos, columns=["X", "Y", "Class", "Confidence", "Filename"])
 
-            transformer = Transformer.from_crs("EPSG:32633", "EPSG:4326", always_xy=True)
+            utm_zone = st.number_input("UTM Zone", value=33, min_value=1, max_value=60)
+            north = st.checkbox("Northern Hemisphere?", value=True)
+
+            transformer = get_transformer_for_utm_zone(utm_zone, north)
+
 
             if robot_tick:
                 df[["lon", "lat"]] = df.apply(
