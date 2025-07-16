@@ -98,7 +98,7 @@ if st.session_state.results:
                     axis=1
                 )
             else:
-                df[["lat", "lon"]] = df.apply(
+                df[["lon", "lat"]] = df.apply(
                     lambda row: pd.Series(transformer.transform(row["X"], row["Y"])),
                     axis=1
                 )
